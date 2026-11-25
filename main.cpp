@@ -19,13 +19,15 @@ typedef struct {
 void showMenu(void);
 int choiceTodo(void);
 
-const char* menuName[] = {"終了", "追加",       "一覧", "一覧(未完了)", "編集",
-                          "削除", "完了済削除", "完了", "保存",         "読込"};
+const char* menuName[] = {"終了", "追加", "一覧", "一覧(未完了)",
+                          "編集", "検索", "削除", "完了済削除",
+                          "完了", "保存", "読込"};
 void todoQuit(TODO_LIST*);
 void todoAdd(TODO_LIST*);
 void todoShow(TODO_LIST*);
 void todoShow_unfinished(TODO_LIST*);
 void todoEdit(TODO_LIST*);
+void todoSearch(TODO_LIST*);
 void todoDel(TODO_LIST*);
 void todoDel_finished(TODO_LIST*);
 void todoDone(TODO_LIST*);
@@ -36,9 +38,9 @@ int confirm(void);
 int readInt(int*);
 
 void (*task[])(TODO_LIST*) = {
-    todoQuit, todoAdd, todoShow,         todoShow_unfinished,
-    todoEdit, todoDel, todoDel_finished, todoDone,
-    todoSave, todoLoad};
+    todoQuit, todoAdd,    todoShow, todoShow_unfinished,
+    todoEdit, todoSearch, todoDel,  todoDel_finished,
+    todoDone, todoSave,   todoLoad};
 
 int main(void) {
     TODO_LIST list = {{0}, 0};
@@ -57,9 +59,15 @@ int main(void) {
 }
 
 void showMenu(void) {
+    int menuCount = 0;
     printf("メニューを選んでください\n");
     for (int i = 1; i < MENU_COUNT; i++) {
-        printf("%d:%s\n", i, menuName[i]);
+        printf("%d:%s ", i, menuName[i]);
+        menuCount++;
+        if (menuCount == 4) {
+            printf("\n");
+            menuCount = 0;
+        }
     }
     printf("%d:%s\n", 0, menuName[0]);  // 終了は最後に表示
 }
@@ -274,6 +282,38 @@ void todoEdit(TODO_LIST* list) {
 
     list->items[num - 1].task[strcspn(list->items[num - 1].task, "\n")] = '\0';
     printf("%d:%sに編集されました\n", num, list->items[num - 1].task);
+
+    return;
+}
+
+void todoSearch(TODO_LIST* list) {
+    char str[100];
+    printf("検索語句を入力してください\n");
+    printf("->");
+    if (fgets(str, sizeof(str), stdin) == NULL) {
+        printf("入力に失敗しました\n");
+        return;
+    }
+    str[strcspn(str, "\n")] = '\0';  // 改行を削除
+    if (strlen(str) == 0) {
+        printf("入力がありません\n");
+        return;
+    }
+
+    int found = 0;  // 検索結果の件数
+
+    for (int i = 0; i < list->count; i++) {
+        if (strstr(list->items[i].task, str) != NULL) {
+            printf("%d:[%s] %s\n", i + 1, list->items[i].done ? "○" : " ",
+                   list->items[i].task);
+            found++;
+        }
+    }
+    if (found == 0) {
+        printf("該当するタスクはありません\n");
+        return;
+    }
+    printf("%d件見つかりました\n", found);
 
     return;
 }
